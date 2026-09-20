@@ -122,4 +122,4 @@ def run_cnn_inference(file:UploadFile)->CNNInferenceResponse:
         confidence=confidence,
         all_probabilities=all_probs
     )
-print("aaaaaaa")
+
