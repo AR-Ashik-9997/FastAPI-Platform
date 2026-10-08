@@ -32,11 +32,16 @@ def run_classification_inference(
     prediction = model.predict(input_array)
 
     # Confidence calculation
-    confidence = 1.0 * len(prediction)
+    confidence = [f"{round(1.0 * 100, 2)}%"] * len(prediction)
+
     if hasattr(model, "predict_proba"):
         probabilities = model.predict_proba(input_array)
-        confidence = [float(np.max(prob)) for prob in probabilities]
+        confidence = [
+            f"{round(float(np.max(prob)) * 100, 2)}%" for prob in probabilities
+        ]
+
     formatted_preds = [p.item() if isinstance(p, np.generic) else p for p in prediction]
+
     if len(formatted_preds) == 1:
         return ClassificationResponse(
             prediction=formatted_preds[0], confidence=confidence[0]

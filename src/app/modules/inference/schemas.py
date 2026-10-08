@@ -37,18 +37,18 @@ class HousePriceInferenceRequest(BaseModel):
         json_schema_extra={
             "example": [
                 {
-                    "area": 2500.0,
-                    "bedrooms": 3,
-                    "bathrooms": 2.0,
-                    "stories": 2,
-                    "mainroad": "yes",
-                    "guestroom": "no",
-                    "basement": "yes",
-                    "hotwaterheating": "no",
-                    "airconditioning": "yes",
-                    "parking": 2,
-                    "prefarea": "yes",
-                    "furnishingstatus": "semi-furnished",
+                    "Square_Footage": 2100,
+                    "Num_Bedrooms": 3,
+                    "Num_Bathrooms": 2.5,
+                    "Stories": 2,
+                    "Year_Built": 2015,
+                    "Garage_Size": 2,
+                    "Lot_Size": 6500,
+                    "Property_Type": "Single-Family",
+                    "Neighborhood_Quality": 8,
+                    "Has_Pool": 1,
+                    "Has_Fireplace": 1,
+                    "Condition": "Excellent",
                 }
             ]
         },
@@ -59,8 +59,8 @@ class ClassificationResponse(BaseModel):
     prediction: Union[str, int, List[Union[str, int]]] = Field(
         ..., description="Predicted class label or list of labels"
     )
-    confidence: Union[float, List[float]] = Field(
-        ..., description="Confidence probability score(s)"
+    confidence: Union[str, float, List[Union[str, float]]] = Field(
+        ..., description="Confidence probability score(s) or percentage string(s)"
     )
 
 
