@@ -1,18 +1,26 @@
 import joblib
 import os
+from pathlib import Path
+
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
+MODELS_DIR = BASE_DIR / "models"
+
 
 class ModelManager:
-    _model = None
+    _models = {}
 
     @classmethod
-    def load_model(cls, model_path: str = "models/trained_model.pkl"):
-        if os.path.exists(model_path):
-            print(f"Loading AI Model from {model_path}...")
-            cls._model = joblib.load(model_path)
-            print("Model loaded successfully.")
-        else:
-            print(f"Warning: Model file not found at {model_path}. Inference endpoints may fail.")
+    def load_all_models(cls):
+        if not MODELS_DIR.exists():
+            print(f"Warning: Models directory not found at {MODELS_DIR}")
+            return
+
+        for file_path in MODELS_DIR.glob("*.pkl"):
+            model_name = file_path.stem
+            print(f"Loading AI Model '{model_name}' from {file_path}...")
+            cls._models[model_name] = joblib.load(file_path)
+        print(f"Successfully loaded models: {list(cls._models.keys())}")
 
     @classmethod
-    def get_model(cls):
-        return cls._model
+    def get_model(cls, name: str):
+        return cls._models.get(name)
