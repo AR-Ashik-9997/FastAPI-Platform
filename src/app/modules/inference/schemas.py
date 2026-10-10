@@ -1,6 +1,6 @@
 from typing import Any, Dict, List, Optional, Union
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 
 
 class Income_Salary_InferenceRequest(BaseModel):
@@ -82,12 +82,13 @@ class CNNInferenceResponse(BaseModel):
         default=None, description="Softmax probabilities for all classes"
     )
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "predicted_class": 0,
-                "class_label": "Apple",
+                "class_label": "Glioma Tumor",
                 "confidence": 0.965,
-                "all_probabilities": [0.965, 0.025, 0.010],
+                "all_probabilities": [0.965, 0.020, 0.010, 0.005],
             }
         }
+    )
