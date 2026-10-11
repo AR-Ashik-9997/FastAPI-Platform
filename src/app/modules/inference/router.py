@@ -1,10 +1,9 @@
-from fastapi import APIRouter, File, UploadFile, HTTPException
+from fastapi import APIRouter
 from app.modules.inference.schemas import (
     Income_Salary_InferenceRequest,
     HousePriceInferenceRequest,
     ClassificationResponse,
     RegressionResponse,
-    CNNInferenceResponse,
 )
 from app.modules.inference import service
 
@@ -19,13 +18,3 @@ def predict_classification(payload: Income_Salary_InferenceRequest):
 @router.post("/predict/regression", response_model=RegressionResponse)
 def predict_regression(payload: HousePriceInferenceRequest):
     return service.run_regression_inference(payload)
-
-
-@router.post("/predict/images", response_model=CNNInferenceResponse)
-async def predict_image(file: UploadFile = File(...)):
-    if not file.content_type or not file.content_type.startswith("image/"):
-        raise HTTPException(
-            status_code=400,
-            detail="Upload file must be a valid image formate (JPG, PNG, JPEG).",
-        )
-    return service.run_cnn_inference(file)
