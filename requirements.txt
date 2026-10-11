@@ -7,7 +7,6 @@ cloudpickle==3.1.2
 dnspython==2.8.0
 email-validator==2.3.0
 fastapi==0.141.1
--e git+https://github.com/AR-Ashik-9997/FastAPI-Platform.git@be6bc8a76cb158981cd16e9b7ded614ab457e82a#egg=fastapi_app
 filelock==4.0.1
 fsspec==2026.9.0
 greenlet==3.5.6
