@@ -1,140 +1,154 @@
-# FastAPI Platform
+# FastAPI ML Inference Platform
 
-A lightweight FastAPI application that combines user identity management with an AI/ML inference layer. The project is organized into reusable modules and uses SQLAlchemy with SQLite by default, while supporting PostgreSQL and MySQL configuration via environment variables.
+This project is a lightweight FastAPI application for serving trained ML models over HTTP. It loads scikit-learn-compatible model files from the `models/` directory and exposes inference endpoints for classification and regression tasks.
 
 ## Overview
 
-This project is designed as an enterprise-style starter backend for:
+The application is intentionally small and modular:
 
-- User/account CRUD features
-- AI/ML model loading and inference endpoints
-- Database-backed persistence through SQLAlchemy
-- A modular FastAPI structure for future extension
+- FastAPI app entrypoint in `src/app/main.py`
+- Central configuration in `src/app/core/config.py`
+- Model loading logic in `src/app/core/ml_loader.py`
+- Inference API routes in `src/app/modules/inference/`
 
-The application loads an ML model at startup and exposes prediction endpoints for classification and regression tasks.
+The current implementation serves two trained models:
+
+- `income_salary_classification_model.pkl`
+- `house_price_regression_model.pkl`
+
+These models are loaded at startup and can be used via API requests.
 
 ## Tech Stack
 
-- Python 3.11+
+- Python 3.10+
 - FastAPI
-- SQLAlchemy
 - Pydantic v2
-- SQLite (default)
-- PostgreSQL / MySQL support via configuration
-- scikit-learn-compatible model files through joblib
-- NumPy, Pandas
+- scikit-learn / joblib
+- NumPy
+- Pandas
+- Uvicorn
 
 ## Project Structure
 
 ```text
-FastAPI-Platform/
-├── app/
-│   ├── __init__.py
-│   ├── main.py
-│   ├── core/
-│   │   ├── __init__.py
-│   │   ├── config.py
-│   │   ├── database.py
-│   │   └── ml_loader.py
-│   └── modules/
-│       ├── identity/
-│       │   ├── __init__.py
-│       │   ├── models.py
-│       │   ├── router.py
-│       │   ├── schemas.py
-│       │   └── service.py
-│       └── inference/
-│           ├── __init__.py
-│           ├── router.py
-│           ├── schemas.py
-│           └── service.py
+Fast-Api/
 ├── models/
-│   └── trained_model.pkl
-├── .env
+│   ├── house_price_regression_model.pkl
+│   └── income_salary_classification_model.pkl
+├── src/
+│   └── app/
+│       ├── __init__.py
+│       ├── main.py
+│       ├── core/
+│       │   ├── __init__.py
+│       │   ├── config.py
+│       │   └── ml_loader.py
+│       └── modules/
+│           └── inference/
+│               ├── __init__.py
+│               ├── router.py
+│               ├── schemas.py
+│               └── service.py
+├── .gitignore
+├── pyproject.toml
 ├── requirements.txt
-├── sql_app.db
-└── README.md
+├── README.md
+└── .venv/
 ```
 
 ## Configuration
 
-The app reads configuration from `.env` using `pydantic-settings`.
+The project uses `pydantic-settings` to manage app configuration via environment variables and defaults.
 
-Example configuration:
+Current settings in `src/app/core/config.py`:
 
-```env
-DATABASE_TYPE=sqlite
-SQLITE_DB_PATH=./sql_app.db
-
-DB_HOST=localhost
-DB_PORT=5432
-DB_USER=postgres
-DB_PASSWORD=secret
-DB_NAME=ai_db
+```python
+class Settings(BaseSettings):
+    PROJECT_NAME: str = "Enterprise AI/ML FastAPI Platform"
+    API_V1_STR: str = "/api/v1"
 ```
 
-Supported database types:
+You can override these values via environment variables if needed.
 
-- `sqlite`
-- `postgresql`
-- `mysql`
+## Installation
 
-## Running the Application
+1. Clone the repository and move into the project directory.
+2. Create and activate a virtual environment.
 
-1. Create and activate a virtual environment:
+On Windows PowerShell:
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+```
+
+On macOS/Linux:
 
 ```bash
 python -m venv .venv
-source .venv/bin/activate   # Linux/macOS
-.venv\Scripts\activate      # Windows
+source .venv/bin/activate
 ```
 
-2. Install dependencies:
+3. Install dependencies:
 
 ```bash
 pip install -r requirements.txt
 ```
 
-3. Start the API server:
+Optional local package install:
 
 ```bash
+pip install -e .
+```
+
+## Running the Application
+
+Because the project uses a `src` layout, set `PYTHONPATH` before starting the app.
+
+On Windows PowerShell:
+
+```powershell
+$env:PYTHONPATH = "src"
 uvicorn app.main:app --reload
 ```
 
-The service will be available at:
+On macOS/Linux:
 
-- `http://127.0.0.1:8000`
-- Swagger docs: `http://127.0.0.1:8000/docs`
-- OpenAPI JSON: `http://127.0.0.1:8000/api/v1/openapi.json`
+```bash
+export PYTHONPATH=src
+uvicorn app.main:app --reload
+```
+
+The app will start at:
+
+- API: `http://127.0.0.1:8000`
+- Swagger UI: `http://127.0.0.1:8000/docs`
+- OpenAPI schema: `http://127.0.0.1:8000/api/v1/openapi.json`
 
 ## API Endpoints
 
 ### Root
 
-- `GET /` — health check endpoint
+```http
+GET /
+```
 
-### Identity Module
-
-- `GET /api/v1/identity/users` — list all users
-- `GET /api/v1/identity/users/limit` — list users with pagination
-- `GET /api/v1/identity/users/{user_id}` — fetch a single user
-- `POST /api/v1/identity/users` — create a new user
-
-Example payload for user creation:
+Returns a simple health/status payload:
 
 ```json
 {
-  "name": "John Doe",
-  "email": "john@example.com"
+  "status": "online",
+  "system": "Enterprise AI/ML FastAPI Platform"
 }
 ```
 
-### Inference Module
+### Classification Inference
 
-- `POST /api/v1/inference/predict/classification`
-- `POST /api/v1/inference/predict/regression`
+```http
+POST /api/v1/inference/predict/classification
+```
 
-Example classification request:
+Request body example:
 
 ```json
 {
@@ -142,73 +156,112 @@ Example classification request:
     {
       "age": 30,
       "workclass": "Private",
-      "hours-per-week": 40
+      "fnlwgt": 200000,
+      "education": "Bachelors",
+      "education-num": 13,
+      "marital-status": "Never-married",
+      "occupation": "Exec-managerial",
+      "relationship": "Not-in-family",
+      "race": "White",
+      "sex": "Male",
+      "capital-gain": 0,
+      "capital-loss": 0,
+      "hours-per-week": 40,
+      "native-country": "United-States"
     }
   ]
 }
 ```
 
-## Database Model
+Response example:
 
-The identity module contains a `User` table:
-
-```python
-class User(Base):
-    __tablename__ = "users"
-
-    id = Column(Integer, primary_key=True, index=True)
-    name = Column(String(100), nullable=False)
-    email = Column(String(100), unique=True, index=True, nullable=False)
-    is_active = Column(Boolean, default=True)
+```json
+{
+  "prediction": "<=50K",
+  "confidence": "86.25%"
+}
 ```
 
-This model is created automatically at startup with `Base.metadata.create_all(bind=engine)`.
+### Regression Inference
 
-## ML Model Loading
-
-The app tries to load a model file at startup from:
-
-```text
-models/trained_model.pkl
+```http
+POST /api/v1/inference/predict/regression
 ```
 
-This is handled by `ModelManager.load_model()` in `app/core/ml_loader.py`.
+Request body example:
 
-If the model file is missing, the application still starts but the inference endpoints return an internal server error when invoked.
+```json
+{
+  "inputs": [
+    {
+      "Square_Footage": 2100,
+      "Num_Bedrooms": 3,
+      "Num_Bathrooms": 2.5,
+      "Stories": 2,
+      "Year_Built": 2015,
+      "Garage_Size": 2,
+      "Lot_Size": 6500,
+      "Property_Type": "Single-Family",
+      "Neighborhood_Quality": 8,
+      "Has_Pool": 1,
+      "Has_Fireplace": 1,
+      "Condition": "Excellent"
+    }
+  ]
+}
+```
 
-## Code Review Summary
+Response example:
 
-This project has a clear modular FastAPI structure and a good separation of concerns:
+```json
+{
+  "prediction": 245000.0,
+  "confidence": 12000.5
+}
+```
 
-- `app/core` handles configuration, database setup, and model loading
-- `app/modules/identity` handles user management logic
-- `app/modules/inference` handles ML prediction requests
-- `app/main.py` wires the application together and registers routers
+## Model Loading Behavior
 
-### Observed strengths
+At startup, the app executes `ModelManager.load_all_models()`.
 
-- Clean router/service separation
-- SQLAlchemy models are straightforward
-- Pydantic validation is used for API payloads
-- Modular structure is easy to extend
+This loads every `.pkl` file in the `models/` directory and stores it in memory under the file name stem. For example:
 
-### Observed issues and risks
+- `income_salary_classification_model.pkl` -> `income_salary_classification_model`
+- `house_price_regression_model.pkl` -> `house_price_regression_model`
 
-- `HTTPException` is used in the identity router without being imported
-- Some endpoints reference `HTTPException` but do not import it, which will raise runtime errors
-- The inference request schema expects a list of feature dictionaries, but the code may be brittle when real ML models require different input structures
-- The application assumes a trained model file exists and does not validate model compatibility before inference
-- The default SQLite database file may be created in the repo root and should be managed carefully in production
+If a model file is missing, the corresponding endpoint will return an HTTP 500 error with a message like:
 
-## Suggested Next Improvements
+```json
+{
+  "detail": "income_salary_classification_model not found."
+}
+```
 
-- Fix missing imports and route-level exception handling
-- Add proper validation for inference payloads based on the trained model
-- Add unit tests for routes and service logic
-- Add a `requirements.txt` lock workflow or Docker setup for consistent deployment
-- Consider adding authentication and authorization if this becomes a production service
-- Add a CI pipeline for linting and automated testing
+## How the API Works
+
+The inference service does the following:
+
+1. Retrieves the required model from `ModelManager`
+2. Converts the JSON payload into a pandas DataFrame
+3. Calls the model's `predict()` method
+4. Formats the result into a Pydantic response model
+5. Adds confidence values when the model exposes probability or standard deviation data
+
+## Notes
+
+- CORS is enabled for all origins via `CORSMiddleware`
+- The app is set up as a minimal ML serving layer, not a full business application
+- Model compatibility depends on the structure and feature names expected by the saved `pkl` files
+
+## Development Notes
+
+If you want to extend this project:
+
+- add new prediction routes under `src/app/modules/`
+- keep request/response schemas in `schemas.py`
+- keep model access logic inside the service layer
+- add additional trained models to `models/` and they will be auto-discovered on startup
 
 ## License
 
-This project currently does not include a formal license file. If you plan to share or deploy it publicly, add a license definition such as MIT or Apache 2.0.
+This repository does not currently include a formal license file.
